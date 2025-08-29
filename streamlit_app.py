@@ -12,7 +12,7 @@ from rapidfuzz import process, fuzz
 
 # ---------------- OCR backends (EasyOCR preferido; pytesseract como fallback) ----------------
 EASYOCR_OK = False
-PYTESS_OK = False
+PYTESS_OK = True
 easy_reader = None
 
 try:
