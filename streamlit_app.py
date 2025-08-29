@@ -7,14 +7,21 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import streamlit as st
-from PIL import Image, ImageOps, ImageEnhance, ImageFilter
+from PIL import Image, ImageOps, ImageEnhance, ImageFilter# app.py
+import re
+import tempfile
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import streamlit as st
+from PIL import Image, ImageOps, ImageEnhance
 from unidecode import unidecode
 from rapidfuzz import process, fuzz
 
-# ========= OCR backends =========
-EASYOCR_OK = False   # deixe False para evitar baixar PyTorch
+# ========= OCR backend (Tesseract) =========
+EASYOCR_OK = False   # manter False para evitar PyTorch no Streamlit Cloud
 PYTESS_OK = False
-
 try:
     import pytesseract
     PYTESS_OK = True
@@ -104,8 +111,6 @@ def build_download(df: pd.DataFrame, label: str, filename: str):
     st.download_button(label=label, data=csv, file_name=filename, mime="text/csv", use_container_width=True)
 
 # ========= OCR: utilitários focados em pt-BR =========
-CONF_MIN = 60  # confiança mínima para tokens do Tesseract
-
 # correções comuns em NUSP manuscrito
 TRANS_DIGITS = str.maketrans({"O":"0","o":"0","Q":"0","S":"5","s":"5","B":"8","b":"8","I":"1","l":"1"})
 def clean_usp_token(t: str) -> str:
@@ -142,7 +147,7 @@ def build_user_words_from_roster(df: pd.DataFrame, col_nome: str) -> str:
         f.write("\n".join(vocab))
     return words_path
 
-def extract_records_from_image(img: "Image.Image", ocr_lang: str, user_words_path: str):
+def extract_records_from_image(img: "Image.Image", ocr_lang: str, user_words_path: str, conf_min_value: int = 60):
     """
     Retorna [{'raw','nome_detectado','usp_detectado'}].
     Duas passadas com Tesseract:
@@ -165,7 +170,7 @@ def extract_records_from_image(img: "Image.Image", ocr_lang: str, user_words_pat
     )
     usp_df = usp_df.dropna(subset=["text"])
     usp_df["text"] = usp_df["text"].astype(str).str.strip()
-    usp_df = usp_df[(usp_df["text"]!="") & (usp_df["conf"].fillna(0).astype(float) >= CONF_MIN)]
+    usp_df = usp_df[(usp_df["text"]!="") & (usp_df["conf"].fillna(0).astype(float) >= conf_min_value)]
     if not usp_df.empty:
         usp_df["y_center"] = usp_df["top"] + usp_df["height"]/2
 
@@ -183,7 +188,7 @@ def extract_records_from_image(img: "Image.Image", ocr_lang: str, user_words_pat
     )
     name_df = name_df.dropna(subset=["text"])
     name_df["text"] = name_df["text"].astype(str).str.strip()
-    name_df = name_df[(name_df["text"]!="") & (name_df["conf"].fillna(0).astype(float) >= CONF_MIN)]
+    name_df = name_df[(name_df["text"]!="") & (name_df["conf"].fillna(0).astype(float) >= conf_min_value)]
     if not name_df.empty:
         name_df["y_center"] = name_df["top"] + name_df["height"]/2
 
@@ -270,7 +275,7 @@ with st.sidebar:
     st.markdown("---")
     ocr_lang = st.selectbox("Idioma base do Tesseract", ["por", "por+eng"], index=0)
     threshold = st.slider("Similaridade mínima p/ Nome (0–100)", 60, 100, 85, 1)
-    conf_min_ui = st.slider("Confiança mínima do OCR (0–100)", 50, 90, CONF_MIN, 1)
+    conf_min_ui = st.slider("Confiança mínima do OCR (0–100)", 50, 90, 60, 1)  # valor padrão 60
     show_debug = st.checkbox("Mostrar OCR bruto (debug)", value=False)
 
 if st.button("🔎 Processar", type="primary", use_container_width=True):
@@ -282,9 +287,8 @@ if st.button("🔎 Processar", type="primary", use_container_width=True):
     else:
         inscritos = inscritos_override
 
-    # atualiza confiança mínima global (para esta execução)
-    global CONF_MIN
-    CONF_MIN = conf_min_ui
+    # usa a confiança mínima escolhida na UI
+    conf_min_value = int(conf_min_ui)
 
     if not imgs:
         st.error("Envie ao menos uma imagem da lista manuscrita (nome + NUSP na mesma linha).")
@@ -298,7 +302,7 @@ if st.button("🔎 Processar", type="primary", use_container_width=True):
     for f in imgs:
         try:
             img = Image.open(f).convert("RGB")
-            recs = extract_records_from_image(img, ocr_lang, user_words_path)
+            recs = extract_records_from_image(img, ocr_lang, user_words_path, conf_min_value)
             for r in recs:
                 r["arquivo"] = getattr(f, "name", "imagem")
             ocr_recs.extend(recs)
@@ -406,4 +410,4 @@ if st.button("🔎 Processar", type="primary", use_container_width=True):
     st.dataframe(nao_inscritos_df, use_container_width=True)
     build_download(nao_inscritos_df, "Baixar Não-inscritos (CSV)", "nao_inscritos.csv")
 
-    st.info("Casamento: USP exato → Nome (fuzzy). Ajuste 'Confiança mínima' e a foto (reta/nítida) se o OCR trouxer ruído.")
+    st.info("Casamento: USP exato → Nome (fuzzy). Ajuste 'Confiança mínima' e use fotos retas/nítidas se o OCR trouxer ruído.")
