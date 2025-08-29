@@ -278,8 +278,17 @@ if st.button("🔎 Processar", type="primary", use_container_width=True):
                 "presente": False, "criterio": "", "linha_ocr": "", "similaridade_nome": 0
             })
 
-    presentes_df = pd.DataFrame(presentes_rows)
-    faltantes_df = pd.DataFrame(faltantes_rows)
+        # ---------------- MATCH finalizados acima ----------------
+
+    # 3c) cria DataFrames com colunas fixas, mesmo se vazios
+    presentes_df = pd.DataFrame(
+        presentes_rows,
+        columns=[COL_NOME, COL_USP, "presente", "criterio", "linha_ocr", "similaridade_nome"]
+    )
+    faltantes_df = pd.DataFrame(
+        faltantes_rows,
+        columns=[COL_NOME, COL_USP, "presente", "criterio", "linha_ocr", "similaridade_nome"]
+    )
 
     # 4) Detectados que não estão na planilha
     nao_usados = ocr_df[~ocr_df.index.isin(usados_idx)].copy()
@@ -294,8 +303,8 @@ if st.button("🔎 Processar", type="primary", use_container_width=True):
     # 5) KPIs e resultados
     c1, c2, c3 = st.columns(3)
     c1.metric("Inscritos", len(inscritos))
-    c2.metric("Presentes", (presentes_df["presente"]==True).sum())
-    c3.metric("Faltantes", (faltantes_df["presente"]==False).sum())
+    c2.metric("Presentes", len(presentes_df))
+    c3.metric("Faltantes", len(faltantes_df))
 
     st.subheader("✅ Presentes")
     st.dataframe(presentes_df, use_container_width=True)
