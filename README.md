@@ -1,10 +1,15 @@
-# ✅ Conferência de Presenças (OCR + USP + Fuzzy)
+# Presenças por LLM de Visão (sem OCR)
 
-- Usa **planilha embutida** `inscritos.xlsx` (colunas **Nome**, **NUSP**) por padrão.
-- Opcionalmente, você pode **substituir** por upload do `.xlsx` ou por link/ID público do Google Drive.
+- Sobe **imagens** da lista manuscrita.
+- Um **LLM de visão** (Gemini 1.5 por padrão) extrai `{nome, nusp}` em **JSON**.
+- Cruzamos com `inscritos.xlsx` (colunas **Nome**, **NUSP**) e geramos:
+  - ✅ Presentes
+  - ❌ Faltantes
+  - ⚠️ Detectados não-inscritos
 
-## Como rodar local
+## Rodar local
 ```bash
 python -m venv .venv && source .venv/bin/activate  # (Windows: .venv\Scripts\activate)
 pip install -r requirements.txt
+export GEMINI_API_KEY=SEU_TOKEN_AQUI
 streamlit run app.py
