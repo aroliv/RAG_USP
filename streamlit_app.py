@@ -87,7 +87,7 @@ def call_vision_llm(images: list[Image.Image], lingua: str = "pt-BR") -> list[di
         genai.configure(api_key=api_key)
 
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",  # rápido e mais barato; troque por pro se quiser
+            "gemini-1.5-flash",
             generation_config={
                 "temperature": 0.2,
                 "response_mime_type": "application/json",
