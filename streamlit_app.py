@@ -165,7 +165,7 @@ def best_match(name_norm: str, candidates_norm: list[str]):
 # UI Streamlit
 # =====================================================
 
-st.title("✅ Presenças por LLM de Visão (Gemini 1.5)")
+st.title("✅ Presenças por LLM de Visão (Gemini 2.5)")
 st.caption("Suba listas manuscritas → LLM extrai dados → match com inscritos.xlsx.")
 
 with st.sidebar:
