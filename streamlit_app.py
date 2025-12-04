@@ -91,7 +91,7 @@ def call_vision_llm(images: list[Image.Image], lingua: str = "pt-BR") -> list[di
 
     # MODELO: agora exige prefixo "models/"
     model = genai.GenerativeModel(
-        model_name="models/gemini-1.5-flash",
+        model_name="models/gemini-2.5-flash",
         generation_config={
             "temperature": 0.1,
             "response_mime_type": "application/json",
